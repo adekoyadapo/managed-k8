@@ -1,0 +1,51 @@
+# EKS Cluster
+---
+apiVersion: eks.aws.crossplane.io/v1beta1
+kind: Cluster
+metadata:
+  name: fargate-cluster
+  labels:
+    example: "true"
+spec:
+  forProvider:
+    region: ca-central-1
+    # Defined in a previous yaml
+    roleArnRef:
+      name: eksrole
+    resourcesVpcConfig:
+      endpointPrivateAccess: true
+      endpointPublicAccess: true
+      # Defined in a previous yaml
+      subnetIdRefs:
+        - name: eks-subnet1
+        - name: eks-subnet2
+      # securityGroupIdRefs:
+      #   - name: eks-cluster-sg
+    version: "1.21"
+  writeConnectionSecretToRef:
+    name: cluster-conn
+    namespace: default
+  providerConfigRef:
+    name: default
+
+# Fargate profile
+---
+apiVersion: eks.aws.crossplane.io/v1beta1
+kind: FargateProfile
+metadata:
+  name: demo-fargateprofile
+  labels:
+    environment: "dev"
+spec:
+  forProvider:
+    region: ca-central-1
+    clusterNameRef:
+      name: fargate-cluster
+    podExecutionRoleArnRef:
+      name: eksrole
+    selectors:
+    - namespace: default
+    tags:
+      environment: "dev"
+  providerConfigRef:
+    name: default

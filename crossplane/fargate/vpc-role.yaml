@@ -1,0 +1,91 @@
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: VPC
+metadata:
+  name: eks-vpc
+spec:
+  forProvider:
+    region: ca-central-1
+    cidrBlock: 10.0.0.0/16
+    enableDnsSupport: true
+    enableDnsHostNames: true
+    instanceTenancy: default
+  providerConfigRef:
+    name: default
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: Role
+metadata:
+  name: eksrole
+spec:
+  forProvider:
+    assumeRolePolicyDocument: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": [
+                        "ec2.amazonaws.com",
+                        "eks.amazonaws.com",
+                        "eks-fargate-pods.amazonaws.com",
+                        "lambda.amazonaws.com",
+                        "s3.amazonaws.com",
+                        "rds.amazonaws.com",
+                        "dax.amazonaws.com"
+                    ]
+                },
+                "Action": [
+                    "sts:AssumeRole"
+                ]
+            }
+        ]
+      }
+    tags:
+      - key: k1
+        value: v1
+  providerConfigRef:
+    name: default
+
+---
+apiVersion: iam.aws.crossplane.io/v1beta1
+kind: RolePolicyAttachment
+metadata:
+  name: sample-rolemanagedpolicyattachment
+spec:
+  forProvider:
+    policyArn: arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+    roleNameRef:
+      name: eksrole
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: eks-subnet1
+spec:
+  forProvider:
+    region: ca-central-1
+    availabilityZone: ca-central-1a
+    cidrBlock: 10.0.1.0/24
+    vpcIdRef:
+      name: eks-vpc
+    mapPublicIPOnLaunch: true
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: eks-subnet2
+spec:
+  forProvider:
+    region: ca-central-1
+    availabilityZone: ca-central-1b
+    cidrBlock: 10.0.2.0/24
+    vpcIdRef:
+      name: eks-vpc
+    mapPublicIPOnLaunch: true
+  providerConfigRef:
+    name: default

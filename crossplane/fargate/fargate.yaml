@@ -1,0 +1,20 @@
+---
+apiVersion: eks.aws.crossplane.io/v1beta1
+kind: FargateProfile
+metadata:
+  name: demo-fargateprofile
+  labels:
+    environment: "dev"
+spec:
+  forProvider:
+    region: ca-central-1
+    clusterNameRef:
+      name: fargate-cluster
+    podExecutionRoleArnRef:
+      name: eksrole
+    selectors:
+    - namespace: default
+    tags:
+      environment: "dev"
+  providerConfigRef:
+    name: default
