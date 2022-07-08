@@ -1,6 +1,45 @@
 name: autopilot
-runtime:
-  name: python
-  options:
-    virtualenv: venv
-description: A minimal Google Cloud Python Pulumi program
+runtime: yaml
+description: An autopilot k8s Pulumi YAML program
+
+resources:
+  autopilot-pulumi:
+    type: gcp:container:Cluster
+    properties:
+      enableAutopilot: true
+      location: us-central1
+      ipAllocationPolicy: {}
+
+variables:
+  name: ${autopilot-pulumi.name}
+  endpoint: ${autopilot-pulumi.endpoint}
+  auth: ${autopilot-pulumi.masterAuth}
+  context: ${autopilot-pulumi.project}_${autopilot-pulumi.location}_${autopilot-pulumi.name}
+
+outputs:
+  kubeconfig: |
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: ${auth.clusterCaCertificate}
+        server: https://${endpoint}
+      name: ${context}
+    contexts:
+    - context:
+        cluster: ${context}
+        user: ${context}
+      name: ${context}
+    current-context: ${context}
+    kind: Config
+    preferences: {}
+    users:
+    - name: ${context}
+      user:
+        auth-provider:
+          config:
+            cmd-args: config config-helper --format=json
+            cmd-path: gcloud
+            expiry-key: '{.credential.token_expiry}'
+            token-key: '{.credential.access_token}'
+          name: gcp
+     
